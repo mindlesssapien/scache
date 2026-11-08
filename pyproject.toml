@@ -1,0 +1,11 @@
+[project]
+name = "scache"
+version = "0.1.0"
+description = "Semantic Caching for LLM API's"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "faiss-cpu>=1.15.1",
+    "numpy>=2.5.4",
+    "sentence-transformers>=6.2.0",
+]
