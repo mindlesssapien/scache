@@ -1,12 +1,15 @@
+from scache.core.guardrail import EntityGuardrail
+
 from ..core.embedding import encoded
 from ..storage.faiss_store import FaissStore
 
 
 class SemanticCache:
 
-    def __init__(self, threshold: float = 0.85, store = None) -> None:
+    def __init__(self, threshold: float = 0.85, store = None, guardrail = None) -> None:
         self.threshold = threshold
-        self.store = FaissStore()
+        self.store = store if store is not None else FaissStore()
+        self.guardrail = guardrail if guardrail is not None else EntityGuardrail()
 
     def lookup(self, prompt: str) -> tuple[str, float] | None:
         prompt_embedding = encoded(prompt)
@@ -14,7 +17,12 @@ class SemanticCache:
         if data is not None:
             score, metadata = data
             if score >= self.threshold:
-                return (metadata["response"], score)
+                if self.guardrail:
+                    cached_prompt = metadata.get("prompt", "")
+                    if not self.guardrail.verify(prompt, cached_prompt):
+                        return None
+
+                return metadata["response"], score
             if score < self.threshold:
                 return None
         return None
