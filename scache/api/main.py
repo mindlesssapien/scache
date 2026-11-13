@@ -10,11 +10,10 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI(title = "scache")
 app.include_router(router)
 
-local_time = time.localtime()
-formatted = time.strftime("%Y-%m-%d %H:%M:%S", local_time).split()
-
 @app.get("/")
 def main():
+    local_time = time.localtime()
+    formatted = time.strftime("%Y-%m-%d %H:%M:%S", local_time).split()
     return {
             "title": "scache",
             "Description": "Scache is a semantic cache for LLm API's",
@@ -23,4 +22,6 @@ def main():
 
 @app.get("/health")
 def health():
+    local_time = time.localtime()
+    formatted = time.strftime("%Y-%m-%d %H:%M:%S", local_time).split()
     return {"status": "ok", "time": formatted[1]}
