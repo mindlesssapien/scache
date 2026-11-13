@@ -1,14 +1,13 @@
 import logging
 import time
 
+from scache.api.routes import router
 from fastapi import FastAPI
-
-from api import routes
 
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title = "scache")
-app.include_router()
+app.include_router(router)
 
 @app.get("/health")
 def health():
