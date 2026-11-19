@@ -5,6 +5,7 @@ from fastapi import APIRouter, Header
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict
 
+from scache.api.metrics import record_cache_hit, record_cache_miss
 from scache.api.streaming import (
     UPSTREAM_API_KEY,
     forward_non_streaming,
@@ -110,7 +111,9 @@ async def chat_completions(
             )
             if cached_result is not None:
                 response, score = cached_result
-                elapsed_ms = (time.perf_counter() - start_time) * 1000
+                duration = time.perf_counter() - start_time
+                record_cache_hit(duration, tenant_id=x_tenant_id)
+                elapsed_ms = duration * 1000
                 if request.stream:
                     return StreamingResponse(
                         stream_cached_response(response, request.model),
@@ -125,6 +128,7 @@ async def chat_completions(
 
         # LEADER (or fallback if wait timed out): query upstream
         payload = request.model_dump(exclude_none=True)
+        record_cache_miss(time.perf_counter() - start_time, tenant_id=x_tenant_id)
         if request.stream:
             return StreamingResponse(
                 stream_upstream_and_cache(
@@ -147,7 +151,9 @@ async def chat_completions(
                 if acquired:
                     await release_lock(prompt_hash, lock_token, tenant_id=x_tenant_id)
     response, score = cached
-    elapsed_ms = (time.perf_counter() - start_time) * 1000
+    duration = time.perf_counter() - start_time
+    record_cache_hit(duration, tenant_id=x_tenant_id)
+    elapsed_ms = duration * 1000
     if request.stream:
         return StreamingResponse(
                 stream_cached_response(response, request.model),
